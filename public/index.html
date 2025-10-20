@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReachInbox Onebox</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .email { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+        .interested { border-color: green; }
+        .spam { border-color: red; }
+        .search { margin-bottom: 20px; }
+        input, select { padding: 8px; margin: 5px; }
+        button { padding: 8px 16px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>ReachInbox Onebox</h1>
+
+    <div class="search">
+        <input type="text" id="searchInput" placeholder="Search emails...">
+        <select id="accountSelect">
+            <option value="">All Accounts</option>
+        </select>
+        <select id="folderSelect">
+            <option value="">All Folders</option>
+            <option value="INBOX">INBOX</option>
+            <option value="Sent">Sent</option>
+        </select>
+        <button onclick="searchEmails()">Search</button>
+    </div>
+
+    <div id="emails"></div>
+
+    <script>
+        async function loadAccounts() {
+            const response = await fetch('/api/accounts');
+            const accounts = await response.json();
+            const select = document.getElementById('accountSelect');
+            accounts.forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = account.name;
+                select.appendChild(option);
+            });
+        }
+
+        async function searchEmails() {
+            const q = document.getElementById('searchInput').value;
+            const accountId = document.getElementById('accountSelect').value;
+            const folder = document.getElementById('folderSelect').value;
+
+            const params = new URLSearchParams({ q, accountId, folder });
+            const response = await fetch(`/api/emails?${params}`);
+            const emails = await response.json();
+
+            displayEmails(emails);
+        }
+
+        function displayEmails(emails) {
+            const container = document.getElementById('emails');
+            container.innerHTML = '';
+
+            emails.forEach(email => {
+                const div = document.createElement('div');
+                div.className = `email ${email.aiCategory.toLowerCase().replace(' ', '-')}`;
+                div.innerHTML = `
+                    <h3>${email.subject}</h3>
+                    <p><strong>From:</strong> ${email.from}</p>
+                    <p><strong>Category:</strong> ${email.aiCategory}</p>
+                    <p>${email.body.substring(0, 200)}...</p>
+                    <button onclick="suggestReply('${email.id}')">Suggest Reply</button>
+                    <div id="reply-${email.id}"></div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function suggestReply(emailId) {
+            const response = await fetch(`/api/emails/${emailId}/suggest-reply`, { method: 'POST' });
+            const data = await response.json();
+            document.getElementById(`reply-${emailId}`).innerHTML = `<p><strong>Suggested Reply:</strong> ${data.reply}</p>`;
+        }
+
+        loadAccounts();
+        searchEmails();
+    </script>
+</body>
+</html>
