@@ -54,4 +54,4 @@ A real-time AI-powered email aggregator with IMAP sync, Elasticsearch search, AI
 ## Demo
 
 Start the server and visit `http://localhost:4000` for the health check. Use Postman to test API endpoints.
-![Project Demo](./assets/demo.gif)
+![Project Demo](./demo.gif)
